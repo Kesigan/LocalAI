@@ -45,20 +45,12 @@ selected_filter = resource_mapping.get(selected_resource)
 
 # Execute k8sgpt commands based on user input
 if selected_filter:
-    st.subheader(f"Analyzing {selected_resource}s")
+    st.subheader(f"Analysis Output: {selected_resource}s")
 
     # k8sgpt commands
     analyze_command = f"k8sgpt analyze --explain --filter={selected_filter} --backend={backend}"
-
-    if st.button("Analyze"):
-        # Execute the analyze command and capture the output
-        analyze_result = subprocess.run(analyze_command, shell=True, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, text=True)
-    else:
-        analyze_result = subprocess.run(analyze_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                        text=True)
-
-    st.write("Analysis Output:")
+    analyze_result = subprocess.run(analyze_command, shell=True, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, text=True)
     st.code(analyze_result.stdout, language="bash")
     st.error(analyze_result.stderr)
 else:

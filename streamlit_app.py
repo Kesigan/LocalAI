@@ -2,7 +2,7 @@ import streamlit as st
 import subprocess
 
 # Streamlit UI components
-st.title("Text Analysis with LocalAI and k8sgpt")
+st.title("K8SGPT Analysis with LocalAI")
 st.header("Authentication")
 
 # Authentication form
@@ -17,23 +17,49 @@ if st.button("Authenticate"):
     st.write(auth_result.stdout)
     st.error(auth_result.stderr)
 
-st.header("Text Analysis")
-text_to_analyze = st.text_area("Enter Text for Analysis")
+# Resource analysis section
+st.header("Resource Analysis")
 
-if st.button("Analyze"):
-    # Analyze the text using k8sgpt with the selected backend
-    analysis_command = f"k8sgpt analyze --explain --backend {backend}"
-    analysis_result = subprocess.run(analysis_command, input=text_to_analyze, shell=True, stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE, text=True)
-    # Split the analysis result into lines
-    analysis_lines = analysis_result.stdout.strip().split('\n')
+# Define a dictionary to map user-friendly resource names to k8sgpt filter values
+resource_mapping = {
+    "Pod": "Pod",
+    "VulnerabilityReport": "VulnerabilityReport",
+    "Deployment": "Deployment",
+    "Service": "Service",
+    "StatefulSet": "StatefulSet",
+    "ReplicaSet": "ReplicaSet",
+    "PersistentVolumeClaim": "PersistentVolumeClaim",
+    "Ingress": "Ingress",
+    "CronJob": "CronJob",
+    "Node": "Node",
+    "NetworkPolicy": "NetworkPolicy",
+    "HorizontalPodAutoScaler": "HorizontalPodAutoScaler",
+    "PodDisruptionBudget": "PodDisruptionBudget"
+}
 
-    # Initialize a flag to track whether the first result has been displayed
-    first_result_displayed = False
-    # Display the header (AI Provider) and the first result
-    for line in analysis_lines:
-        st.write(line)
-        if line.strip() == "":
-            if first_result_displayed:
-                break  # If the first result has already been displayed, break
-            first_result_displayed = True
+# User input: Select resource type
+selected_resource = st.selectbox("Select Resource Type", list(resource_mapping.keys()))
+
+# Get the corresponding k8sgpt filter value
+selected_filter = resource_mapping.get(selected_resource)
+
+# Execute k8sgpt commands based on user input
+if selected_filter:
+    st.subheader(f"Analyzing {selected_resource}s")
+
+    # k8sgpt commands
+    analyze_command = f"k8sgpt analyze --explain --filter={selected_filter} --backend={backend}"
+
+    if st.button("Analyze"):
+        # Execute the analyze command and capture the output
+        analyze_result = subprocess.run(analyze_command, shell=True, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE, text=True)
+    else:
+        analyze_result = subprocess.run(analyze_command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        text=True)
+
+    st.write("Analysis Output:")
+    st.code(analyze_result.stdout, language="bash")
+    st.error(analyze_result.stderr)
+else:
+    st.warning("Please select a valid resource type.")
